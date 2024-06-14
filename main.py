@@ -5,18 +5,32 @@ import msal
 import requests
 import json
 from OpenSSL import crypto
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 import os
 # Configuration
-client_id = 'ee62634a-259'
-tenant_id = ''
-client_secret = 'mA'
+client_id = '---bf7e-'
+tenant_id = '4e937270--8fff-'
+client_secret = 'mZf8Q~8Li.'
 authority = f"https://login.microsoftonline.com/{tenant_id}"
 scopes = ["https://ikbendion.sharepoint.com/.default"]
 # Path to your certificate file
 certificate_path = 'MyCompanyName.pfx'
-certificate_password = 'h23'
+certificate_password = 'hello123'
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 def get_access_token():
+    print(bcolors.OKBLUE+"[MSAL] Aquiring an access token...")
     app = msal.ConfidentialClientApplication(
         client_id,
         authority=authority,
@@ -28,12 +42,14 @@ def get_access_token():
 
     result = app.acquire_token_for_client(scopes=scopes)
     if "access_token" in result:
+        print(bcolors.OKBLUE+"[MSAL] Access token aquired!")
         return result["access_token"]
     else:
         print("Error acquiring token: ", result.get("error_description"))
         sys.exit(1)
 
 def get_certificate_thumbprint(cert_path, cert_password):
+    print(bcolors.OKCYAN+f"[OpenSSL] Fetching certificate thumbprint for {cert_path}...")
     with open(cert_path, 'rb') as cert_file:
         cert_data = cert_file.read()
     pfx = crypto.load_pkcs12(cert_data, cert_password)
@@ -41,6 +57,7 @@ def get_certificate_thumbprint(cert_path, cert_password):
     return cert.digest('sha1').decode('utf-8').replace(':', '')
 
 def get_certificate_private_key(cert_path, cert_password):
+    print(bcolors.OKCYAN+f"[OpenSSL] Fetching certificate PK for {cert_path}...")
     with open(cert_path, 'rb') as cert_file:
         cert_data = cert_file.read()
     pfx = crypto.load_pkcs12(cert_data, cert_password)
@@ -65,21 +82,21 @@ def create_copy_job(source_url, destination_url, access_token):
 
     response = requests.post(url, headers=headers, data=json.dumps(body))
     if response.status_code == 200:
-        print("Copy job created successfully.")
-        print(response.json())
+        print(bcolors.OKGREEN+"[SharePoint] Copy Job Created!")
+        print(bcolors.UNDERLINE+f"Source URL: {source_url}")
+        print(bcolors.UNDERLINE+f"Destination URL: {destination_url}")
     else:
-        print(f"Failed to create copy job. Status code: {response.status_code}")
+        print(bcolors.FAIL+f"Failed to create copy job. Status code: {response.status_code}")
         print(response.text)
 
 def main():
     access_token = get_access_token()
-    print("Access token acquired.")
-    print(access_token)
     create_copy_job(
         source_url='https://ikbendion.sharepoint.com/sites/ExterneBestanden/Shared%20Documents/Folder2',
         destination_url='https://ikbendion.sharepoint.com/sites/Bestanden/Shared%20Documents',
         access_token=access_token
     )
+    print(bcolors.reen)
 
 if __name__ == "__main__":
     main()
